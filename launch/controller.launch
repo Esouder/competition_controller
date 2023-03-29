@@ -1,0 +1,4 @@
+<launch>
+    	<include file="$(find competition_controller)/launch/state_machine.launch"/>
+		<include file="$(find competition_controller)/launch/navigate.launch"/>
+</launch>

@@ -1,0 +1,4 @@
+<launch>
+    <node pkg="competition_controller" type="navigate.py" name = "navigate" output="screen">
+    </node>
+</launch>

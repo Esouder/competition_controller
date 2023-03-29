@@ -1,0 +1,6 @@
+<launch>
+    <node pkg="competition_controller" type="state_machine.py" name = "state_machine" output="screen">
+        <param name="/use_sim_time" type="bool" value="true"/>
+        <param name="model_location" value="$(find competition_controller)/node/model.h5"/>
+    </node>
+</launch>

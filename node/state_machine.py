@@ -41,7 +41,7 @@ class State_StartupTurnAndDrive(AbstractState):
         super().__init__()
         time.sleep(1)
         self.__state_entry_time = rospy.get_time()
-        self.__target_time_in_state = 3
+        self.__target_time_in_state = 2
         self.stateEntryAction()
     def stateEntryAction(self):
         start_publisher = rospy.Publisher("/license_plate", String, queue_size=1)
@@ -53,7 +53,7 @@ class State_StartupTurnAndDrive(AbstractState):
         return "StartupTurnAndDrive"
     def evaluate_transition(self, data) -> AbstractState:
         if(rospy.get_time() >=  self.__target_time_in_state + self.__state_entry_time):
-            return State_Finished()
+            return State_PaveNavigate()
         else:
             return self
     

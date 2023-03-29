@@ -17,6 +17,7 @@ from surface_detector import SurfaceDetector
 # eww globals
 
 surface_detector = None
+competition_start_time = None
 
 ### Abstract State ###
 
@@ -44,15 +45,19 @@ class State_StartupTurnAndDrive(AbstractState):
         self.__target_time_in_state = 2
         self.stateEntryAction()
     def stateEntryAction(self):
+        global competition_start_time
         start_publisher = rospy.Publisher("/license_plate", String, queue_size=1)
         time.sleep(1)
+        competition_start_time = rospy.get_time()
         competition_begin_message = str("Team4,multi21,0,AA00")
         start_publisher.publish(competition_begin_message)
         print("Began Timer")
     def get_state_name(self) -> str:
         return "StartupTurnAndDrive"
     def evaluate_transition(self, data) -> AbstractState:
-        if(rospy.get_time() >=  self.__target_time_in_state + self.__state_entry_time):
+        if(rospy.get_time() > competition_start_time + 3.75*60):
+            return State_Finished()
+        elif(rospy.get_time() >=  self.__target_time_in_state + self.__state_entry_time):
             return State_PaveNavigate()
         else:
             return self
@@ -63,6 +68,8 @@ class State_PaveNavigate(AbstractState):
     def get_state_name(self) -> str:
         return "PaveNavigate"
     def evaluate_transition(self, data) -> AbstractState:
+        if(rospy.get_time() > competition_start_time + 3.75*60):
+            return State_Finished()
         current_surface = surface_detector.poll(data)
         if current_surface == SurfaceDetector.RoadSurface.GRASS:
             return State_GrassNavigate()
@@ -75,6 +82,8 @@ class State_GrassNavigate(AbstractState):
     def get_state_name(self) -> str:
         return "GrassNavigate"
     def evaluate_transition(self, data) -> AbstractState:
+        if(rospy.get_time() > competition_start_time + 3.75*60):
+            return State_Finished()
         current_surface = surface_detector.poll(data)
         if current_surface == SurfaceDetector.RoadSurface.PAVEMENT:
             return State_PaveNavigate()
@@ -87,7 +96,10 @@ class State_CrosswalkWait(AbstractState):
     def get_state_name(self) -> str:
         return "CrosswalkWait"
     def evaluate_transition(self, data) -> AbstractState:
-        return self
+        if(rospy.get_time() > competition_start_time + 3.75*60):
+            return State_Finished()
+        else:
+            return self
     
 class State_CrosswalkTraverse(AbstractState):
     def __init__(self):
@@ -95,7 +107,10 @@ class State_CrosswalkTraverse(AbstractState):
     def get_state_name(self) -> str:
         return "CrosswalkTraverse"
     def evaluateTransition(self, data) -> AbstractState:
-        return self
+        if(rospy.get_time() > competition_start_time + 3.75*60):
+            return State_Finished()
+        else:
+            return self
 
 class State_TransToInnerLoop(AbstractState):
     def __init__(self):
@@ -103,7 +118,10 @@ class State_TransToInnerLoop(AbstractState):
     def get_state_name(self) -> str:
         return "TransToInnerLoop"
     def evaluate_transition(self, data) -> AbstractState:
-        return self
+        if(rospy.get_time() > competition_start_time + 3.75*60):
+            return State_Finished()
+        else:
+            return self
    
 class State_StopSend(AbstractState):
     def __init__(self):
@@ -111,7 +129,10 @@ class State_StopSend(AbstractState):
     def get_state_name(self, data) -> str:
         return "StopSend"
     def evaluate_transition(self) -> AbstractState:
-        return self
+        if(rospy.get_time() > competition_start_time + 3.75*60):
+            return State_Finished()
+        else:
+            return self
     
 class State_Finished(AbstractState):
     def __init__(self):
@@ -134,7 +155,10 @@ class State_Error(AbstractState):
     def get_state_name(self) -> str:
         return "Error"
     def evaluate_transition(self, data) -> AbstractState:
-        return self
+        if(rospy.get_time() > competition_start_time + 3.75*60):
+            return State_Finished()
+        else:
+            return self
 
 ### State Machine ###
 class StateMachine:

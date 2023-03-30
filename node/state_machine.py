@@ -18,7 +18,7 @@ from surface_detector import SurfaceDetector
 
 surface_detector = None
 competition_start_time = None
-MAX_COMPETITION_TIME = 10.0*60 # Automatically send end message after this time
+MAX_COMPETITION_TIME = 1.0*60 # Automatically send end message after this time
 
 ### Abstract State ###
 
@@ -87,7 +87,7 @@ class State_PreGrassNavigate(AbstractState):
     def __init__(self):
         super().__init__()
         self.__state_entry_time = rospy.get_time()
-        self.__target_time_in_state = 1.5
+        self.__target_time_in_state = 2.0
     def get_state_name(self) -> str:
         return "PreGrassNavigate"
     def evaluate_transition(self, data) -> AbstractState:

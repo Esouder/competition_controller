@@ -13,7 +13,7 @@ class Navigator():
         self.current_state = 'noState'
         self.move = Twist()
         self.move_publisher = rospy.Publisher('/R1/cmd_vel', Twist, queue_size=1)
-        self.annotated_feed_pub = rospy.Publisher("/competition_controller/annotated_feed", Image, queue_size=1)
+        self.annotated_feed_pub = rospy.Publisher("/competition_controller/image_annotated", Image, queue_size=1)
         self.bridge = CvBridge()
 
     def get_adaptive_speed_factor(self, error, threshold, max_factor):
@@ -37,7 +37,6 @@ class Navigator():
         _, frame_threshold = cv2.threshold(frame_grey, 0, 255, cv2.THRESH_BINARY_INV)
         # cv2.imshow("OBSERVE HYPNOTOAD", frame_threshold)
         # cv2.waitKey(3)
-        self.annotated_feed_pub.publish(self.bridge.cv2_to_imgmsg(frame_threshold, "mono8"))
         sum_x = 0
         pixel_count = 1
         height = frame_threshold.shape[0]
@@ -50,7 +49,14 @@ class Navigator():
                   sum_x += x
                   pixel_count+=1
         x_avg = int(sum_x / pixel_count)
-        #cv2.line(frame_out, (x_avg, height-detection_area), (x_avg, height-1), (0, 255, 0), thickness=10)
+
+        # Place a line at the average x position on the image
+        frame_out = frame.copy()
+        cv2.line(frame_out, (x_avg, height-detection_area_top), (x_avg, height-detection_are_bottom), (0, 255, 0), thickness=10)
+        # cv2.imshow("XAVG", frame_out)
+        # cv2.waitKey(3)
+        self.annotated_feed_pub.publish(self.bridge.cv2_to_imgmsg(frame_out, "bgr8"))
+
         error = width/2 - x_avg
         self.move.linear.x = 0.125
         #derivative = prev_error-error
@@ -112,8 +118,8 @@ class Navigator():
 
         # cv2.imshow("OBSERVE HYPNOTOAD", sobeled_image)
         # cv2.waitKey(3)
-        self.annotated_feed_pub.publish(self.bridge.cv2_to_imgmsg(sobeled_image, "mono8"))
         
+
         sum_x = 0
         pixel_count = 1
         height = sobeled_image.shape[0]
@@ -125,6 +131,13 @@ class Navigator():
                     pixel_count+=1
 
         x_avg = int(sum_x / pixel_count)
+
+        # Place a line at the average x position on the image
+        frame_out = frame.copy()
+        cv2.line(frame_out, (x_avg, frame_out.shape[0]-200), (x_avg, frame_out.shape[0]-100), (0, 255, 0), thickness=10)
+        # cv2.imshow("XAVG", frame_out)
+        # cv2.waitKey(3)
+        self.annotated_feed_pub.publish(self.bridge.cv2_to_imgmsg(frame_out, "bgr8"))
 
         error = width*0.75 - x_avg
         #cv2.line(frame_out, (x_avg, out_height-100), (x_avg, out_height-1), (0, 255, 0), thickness=10)
@@ -142,7 +155,7 @@ class Navigator():
 
         self.move.linear.x = 0.1
 
-        cv2.imshow("DEBUG", frame_out)
+        # cv2.imshow("DEBUG", frame_out)
     
     def navigate_startup(self, frame) -> None:
         '''Navigate during initial startup'''

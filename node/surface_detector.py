@@ -28,7 +28,7 @@ class SurfaceDetector:
 
         small_frame = cv2.resize(frame, (int(frame.shape[1]*0.025),int(frame.shape[0]*0.05)))
         cropped_small_frame = small_frame[18:-1]
-        grass_prob = self.model.predict(np.array([cropped_small_frame]))[0][0]
+        grass_prob = self.model(np.array([cropped_small_frame]))[0][0]
         current_surface = self.RoadSurface.GRASS if grass_prob > 0.5 else self.RoadSurface.PAVEMENT
 
         if debug:

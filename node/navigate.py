@@ -14,10 +14,19 @@ class Navigator():
         self.move = Twist()
         self.move_publisher = rospy.Publisher('/R1/cmd_vel', Twist, queue_size=1)
         self.bridge = CvBridge()
+
+    def get_adaptive_speed_factor(self, error, threshold, max_factor):
+        if(abs(error)>threshold):
+            asf = 1
+        else:
+            asf = (((threshold**2)-(error**2))**2) / ((threshold**4) * max_factor) + 1
+            print(asf)
+
+        return asf
     
     def navigate_pave(self, frame) -> None:
         '''Navigation algorithm based on pavement'''
-        kP = 0.002
+        kP = 0.005
         kD = 0.001
         frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         frame_blues = frame_hsv
@@ -31,16 +40,17 @@ class Navigator():
         pixel_count = 1
         height = frame_threshold.shape[0]
         width = frame_threshold.shape[1]
-        detection_area = 100
-        for y in range(height-detection_area,height-1):
+        detection_area_top = 200
+        detection_are_bottom = 100
+        for y in range(height-detection_area_top,height-detection_are_bottom):
           for x in range(0,width-1):
              if frame_threshold[y][x]:
                   sum_x += x
                   pixel_count+=1
         x_avg = int(sum_x / pixel_count)
         #cv2.line(frame_out, (x_avg, height-detection_area), (x_avg, height-1), (0, 255, 0), thickness=10)
-        self.move.linear.x = 0.05
         error = width/2 - x_avg
+        self.move.linear.x = 0.125
         #derivative = prev_error-error
         #cv2.putText(frame_out, f"error:{error} | derivative: {derivative}", (100,200), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,0,0),2)
         if(x_avg<=1):
@@ -50,9 +60,18 @@ class Navigator():
         
         prev_error = error
 
+    def navigate_pre_grass(self, frame) -> None:
+        '''short turn to get onto the grass'''
+        self.move.angular.z = 0.75
+        self.move.linear.x = 0.15
+
+
     def navigate_grass(self, frame) -> None:
         '''Navigation algorithm based on grass'''
-        kP = 0.002
+
+        frame_out = frame
+
+        kP = 0.004
         kD = 0.001
         lower = np.array([28, 41, 106])
         upper = np.array([37, 79, 255])
@@ -73,10 +92,10 @@ class Navigator():
 
         greyscale_image=cv2.cvtColor(hsv_passed, cv2.COLOR_BGR2GRAY)
 
-        navigation_start = 400
-        navigation_end = 1100
+        navigation_start = 500
+        navigation_end = 780
         width, height = greyscale_image.shape
-        navigation_area_image = greyscale_image[0:width][navigation_start:navigation_end]
+        navigation_area_image = greyscale_image[0:-1][navigation_start:navigation_end]
 
         kernel = np.ones((3,3), np.uint8)
         eroded = cv2.erode(navigation_area_image, kernel, iterations = 1)
@@ -85,7 +104,8 @@ class Navigator():
 
         sobeled_image = cv2.Sobel(dilroded_image, cv2.CV_64F, 0, 1, ksize=3)
 
-        #out_height = frame_out.shape[0]
+        out_height = frame_out.shape[0]
+        out_width = frame_out.shape[1]
 
         cv2.imshow("OBSERVE HYPNOTOAD", sobeled_image)
         cv2.waitKey(3)
@@ -95,19 +115,30 @@ class Navigator():
         height = sobeled_image.shape[0]
         width = sobeled_image.shape[1]
         for y in range(0,height-1):
-            for x in range(int(width/2),width-1):
+            for x in range(int(width*0.5),width-1):
                 if sobeled_image[y][x]:
                     sum_x += x
                     pixel_count+=1
 
         x_avg = int(sum_x / pixel_count)
+
+        error = width*0.75 - x_avg
         #cv2.line(frame_out, (x_avg, out_height-100), (x_avg, out_height-1), (0, 255, 0), thickness=10)
+        #cv2.line(frame_out, (0, navigation_start), (out_width-1, navigation_start), (0, 0, 255), thickness=10)
+        #cv2.line(frame_out, (0, navigation_end), (out_width-1, navigation_end), (0, 0, 255), thickness=10)
+        #cv2.line(frame_out, (int(width/2), 0), (int(width/2), out_height-1), (255, 0, 0), thickness=10)
+        cv2.rectangle(frame_out, (int(out_width*0.5),navigation_start), (out_width-1, navigation_end), (255,0,0), 5)
+        cv2.putText(frame_out, f"error:{error}", (100,200), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,0,0),2)
+
+
         if(x_avg<=1):
             self.move.angular.z = 0
         else:
-            self.move.angular.z = (width/4*3 - x_avg)*kP
+            self.move.angular.z = error*kP
 
-        self.move.linear.x = 0.05
+        self.move.linear.x = 0.1
+
+        cv2.imshow("DEBUG", frame_out)
     
     def navigate_startup(self, frame) -> None:
         '''Navigate during initial startup'''
@@ -126,6 +157,8 @@ class Navigator():
             self.navigate_startup(frame)
         elif self.current_state == "PaveNavigate":
             self.navigate_pave(frame)
+        elif self.current_state == "PreGrassNavigate":
+            self.navigate_pre_grass(frame)
         elif self.current_state == "GrassNavigate":
             self.navigate_grass(frame)
         elif self.current_state == "Finished":

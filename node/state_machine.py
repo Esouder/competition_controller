@@ -9,8 +9,8 @@ from rosgraph_msgs.msg import Clock
 import time
 from cv_bridge import CvBridge
 
-from tensorflow.keras import models
-from tensorflow.keras import optimizers
+from tensorflow.python.keras import models
+from tensorflow.python.keras import optimizers
 
 from surface_detector import SurfaceDetector
 
@@ -18,7 +18,7 @@ from surface_detector import SurfaceDetector
 
 surface_detector = None
 competition_start_time = None
-MAX_COMPETITION_TIME = 0.5*60 # Automatically send end message after this time
+MAX_COMPETITION_TIME = 10.0*60 # Automatically send end message after this time
 
 ### Abstract State ###
 
@@ -182,9 +182,8 @@ class StateMachine:
 
 ### Node ###
 
-def state_machine_node():
+def state_machine_node(initiator_msg):
     global surface_detector
-    rospy.init_node('topic_subscriber')
     print(rospy.get_time())
     state_machine = StateMachine()
     surface_detector = SurfaceDetector()
@@ -193,4 +192,11 @@ def state_machine_node():
 
 if __name__ == '__main__':
     # What an ugly piece of boilerplate. This is why people hate you, Python.
-    state_machine_node()
+    # Wait until we get the start message before proceeding
+    rospy.init_node('state_machine_node')
+    start_subscriber = rospy.Subscriber("/competition_controller/start", String, state_machine_node)
+    print("----------------------------------------")
+    print("Waiting for competition controller to start")
+    print("----------------------------------------")
+    rospy.spin()
+    # state_machine_node()

@@ -141,13 +141,20 @@ class Navigator():
 
 ### Node ###
 
-def navigate_node():
-    rospy.init_node('topic_subscriber')
+def navigate_node(initiator_msg):
     navigator = Navigator()
     camera_sub = rospy.Subscriber("/R1/pi_camera/image_raw", Image, navigator.navigate)
     state_sub = rospy.Subscriber("/state", String, navigator.update_state)
+    annotated_feed_pub = rospy.Publisher("/competition_controller/annotated_feed", Image, queue_size=1)
     rospy.spin()
 
 if __name__ == '__main__':
-    # What an ugly piece of boilerplate. This is why people hate you, Python.
-    navigate_node()
+    # What an ugly piece of boilerplate. This is why people hate you, Python
+    # Wait until the competition controller tells us to start
+    rospy.init_node('navigate_node')
+    start_subscriber = rospy.Subscriber("/competition_controller/start", String, navigate_node)
+    print("----------------------------------------")
+    print("Waiting for competition controller to start")
+    print("----------------------------------------")
+    rospy.spin()
+    # navigate_node()

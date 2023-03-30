@@ -18,6 +18,7 @@ from surface_detector import SurfaceDetector
 
 surface_detector = None
 competition_start_time = None
+MAX_COMPETITION_TIME = 0.5*60 # Automatically send end message after this time
 
 ### Abstract State ###
 
@@ -55,7 +56,7 @@ class State_StartupTurnAndDrive(AbstractState):
     def get_state_name(self) -> str:
         return "StartupTurnAndDrive"
     def evaluate_transition(self, data) -> AbstractState:
-        if(rospy.get_time() > competition_start_time + 3.75*60):
+        if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
             return State_Finished()
         elif(rospy.get_time() >=  self.__target_time_in_state + self.__state_entry_time):
             return State_PaveNavigate()
@@ -68,7 +69,7 @@ class State_PaveNavigate(AbstractState):
     def get_state_name(self) -> str:
         return "PaveNavigate"
     def evaluate_transition(self, data) -> AbstractState:
-        if(rospy.get_time() > competition_start_time + 3.75*60):
+        if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
             return State_Finished()
         current_surface = surface_detector.poll(data)
         if current_surface == SurfaceDetector.RoadSurface.GRASS:
@@ -82,7 +83,7 @@ class State_GrassNavigate(AbstractState):
     def get_state_name(self) -> str:
         return "GrassNavigate"
     def evaluate_transition(self, data) -> AbstractState:
-        if(rospy.get_time() > competition_start_time + 3.75*60):
+        if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
             return State_Finished()
         current_surface = surface_detector.poll(data)
         if current_surface == SurfaceDetector.RoadSurface.PAVEMENT:
@@ -96,7 +97,7 @@ class State_CrosswalkWait(AbstractState):
     def get_state_name(self) -> str:
         return "CrosswalkWait"
     def evaluate_transition(self, data) -> AbstractState:
-        if(rospy.get_time() > competition_start_time + 3.75*60):
+        if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
             return State_Finished()
         else:
             return self
@@ -107,7 +108,7 @@ class State_CrosswalkTraverse(AbstractState):
     def get_state_name(self) -> str:
         return "CrosswalkTraverse"
     def evaluateTransition(self, data) -> AbstractState:
-        if(rospy.get_time() > competition_start_time + 3.75*60):
+        if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
             return State_Finished()
         else:
             return self
@@ -118,7 +119,7 @@ class State_TransToInnerLoop(AbstractState):
     def get_state_name(self) -> str:
         return "TransToInnerLoop"
     def evaluate_transition(self, data) -> AbstractState:
-        if(rospy.get_time() > competition_start_time + 3.75*60):
+        if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
             return State_Finished()
         else:
             return self
@@ -129,7 +130,7 @@ class State_StopSend(AbstractState):
     def get_state_name(self, data) -> str:
         return "StopSend"
     def evaluate_transition(self) -> AbstractState:
-        if(rospy.get_time() > competition_start_time + 3.75*60):
+        if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
             return State_Finished()
         else:
             return self
@@ -155,7 +156,7 @@ class State_Error(AbstractState):
     def get_state_name(self) -> str:
         return "Error"
     def evaluate_transition(self, data) -> AbstractState:
-        if(rospy.get_time() > competition_start_time + 3.75*60):
+        if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
             return State_Finished()
         else:
             return self

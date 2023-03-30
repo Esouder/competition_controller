@@ -66,6 +66,7 @@ class State_StartupTurnAndDrive(AbstractState):
 class State_PaveNavigate(AbstractState):
     def __init__(self):
         super().__init__()
+        self.previous_transitions = 0
     def get_state_name(self) -> str:
         return "PaveNavigate"
     def evaluate_transition(self, data) -> AbstractState:
@@ -73,6 +74,26 @@ class State_PaveNavigate(AbstractState):
             return State_Finished()
         current_surface = surface_detector.poll(data)
         if current_surface == SurfaceDetector.RoadSurface.GRASS:
+            if(self.previous_transitions > 9):
+                return State_PreGrassNavigate()
+            else:
+                self.previous_transitions +=1
+                return self
+        else:
+            self.previous_transitions = 0
+            return self
+
+class State_PreGrassNavigate(AbstractState):
+    def __init__(self):
+        super().__init__()
+        self.__state_entry_time = rospy.get_time()
+        self.__target_time_in_state = 1.5
+    def get_state_name(self) -> str:
+        return "PreGrassNavigate"
+    def evaluate_transition(self, data) -> AbstractState:
+        if(rospy.get_time() > competition_start_time + 3.75*60):
+            return State_Finished()
+        elif(rospy.get_time() >=  self.__target_time_in_state + self.__state_entry_time):
             return State_GrassNavigate()
         else:
             return self
@@ -80,6 +101,7 @@ class State_PaveNavigate(AbstractState):
 class State_GrassNavigate(AbstractState):
     def __init__(self):
         super().__init__()
+        self.previous_transitions = 0
     def get_state_name(self) -> str:
         return "GrassNavigate"
     def evaluate_transition(self, data) -> AbstractState:
@@ -87,8 +109,13 @@ class State_GrassNavigate(AbstractState):
             return State_Finished()
         current_surface = surface_detector.poll(data)
         if current_surface == SurfaceDetector.RoadSurface.PAVEMENT:
-            return State_PaveNavigate()
+            if(self.previous_transitions > 5):
+                return State_PaveNavigate()
+            else:
+                self.previous_transitions += 1
+                return self
         else:
+            self.previous_transitions = 0
             return self
 
 class State_CrosswalkWait(AbstractState):

@@ -13,6 +13,7 @@ class Navigator():
         self.current_state = 'noState'
         self.move = Twist()
         self.move_publisher = rospy.Publisher('/R1/cmd_vel', Twist, queue_size=1)
+        self.annotated_feed_pub = rospy.Publisher("/competition_controller/annotated_feed", Image, queue_size=1)
         self.bridge = CvBridge()
 
     def get_adaptive_speed_factor(self, error, threshold, max_factor):
@@ -34,8 +35,9 @@ class Navigator():
         frame_blues[:, :, 2] = 0
         frame_grey = cv2.cvtColor(frame_blues, cv2.COLOR_BGR2GRAY)
         _, frame_threshold = cv2.threshold(frame_grey, 0, 255, cv2.THRESH_BINARY_INV)
-        cv2.imshow("OBSERVE HYPNOTOAD", frame_threshold)
-        cv2.waitKey(3)
+        # cv2.imshow("OBSERVE HYPNOTOAD", frame_threshold)
+        # cv2.waitKey(3)
+        self.annotated_feed_pub.publish(self.bridge.cv2_to_imgmsg(frame_threshold, "mono8"))
         sum_x = 0
         pixel_count = 1
         height = frame_threshold.shape[0]
@@ -107,9 +109,11 @@ class Navigator():
         out_height = frame_out.shape[0]
         out_width = frame_out.shape[1]
 
-        cv2.imshow("OBSERVE HYPNOTOAD", sobeled_image)
-        cv2.waitKey(3)
 
+        # cv2.imshow("OBSERVE HYPNOTOAD", sobeled_image)
+        # cv2.waitKey(3)
+        self.annotated_feed_pub.publish(self.bridge.cv2_to_imgmsg(sobeled_image, "mono8"))
+        
         sum_x = 0
         pixel_count = 1
         height = sobeled_image.shape[0]
@@ -178,7 +182,6 @@ def navigate_node(initiator_msg):
     navigator = Navigator()
     camera_sub = rospy.Subscriber("/R1/pi_camera/image_raw", Image, navigator.navigate)
     state_sub = rospy.Subscriber("/state", String, navigator.update_state)
-    annotated_feed_pub = rospy.Publisher("/competition_controller/annotated_feed", Image, queue_size=1)
     rospy.spin()
 
 if __name__ == '__main__':

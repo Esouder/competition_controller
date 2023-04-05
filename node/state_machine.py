@@ -156,7 +156,7 @@ class State_StopTurnLeft(AbstractState):
         super().__init__()
         self.__state_entry_time = rospy.get_time()
         self.__target_time_in_state = 1.0
-    def get_state_name(self, data) -> str:
+    def get_state_name(self) -> str:
         return "StopTurnLeft"
     def evaluate_transition(self) -> AbstractState:
         if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
@@ -171,7 +171,7 @@ class State_StopTurnRight(AbstractState):
         super().__init__()
         self.__state_entry_time = rospy.get_time()
         self.__target_time_in_state = 1.0
-    def get_state_name(self, data) -> str:
+    def get_state_name(self) -> str:
         return "StopTurnRight"
     def evaluate_transition(self) -> AbstractState:
         if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
@@ -184,7 +184,7 @@ class State_StopTurnRight(AbstractState):
 class State_StopSend(AbstractState):
     def __init__(self):
         super().__init__()
-    def get_state_name(self, data) -> str:
+    def get_state_name(self) -> str:
         return "StopSend"
     def evaluate_transition(self) -> AbstractState:
         if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
@@ -204,7 +204,7 @@ class State_Finished(AbstractState):
         print("Ended Timer")
     def get_state_name(self) -> str:
         return "Finished"
-    def evaluate_transition(self, data) -> AbstractState:
+    def evaluate_transition(self) -> AbstractState:
         return self
     
 class State_Error(AbstractState):
@@ -212,7 +212,7 @@ class State_Error(AbstractState):
         super().__init__()
     def get_state_name(self) -> str:
         return "Error"
-    def evaluate_transition(self, data) -> AbstractState:
+    def evaluate_transition(self) -> AbstractState:
         if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
             return State_Finished()
         else:

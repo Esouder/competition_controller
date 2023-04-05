@@ -158,7 +158,7 @@ class State_StopTurnLeft(AbstractState):
         self.__target_time_in_state = 1.0
     def get_state_name(self) -> str:
         return "StopTurnLeft"
-    def evaluate_transition(self) -> AbstractState:
+    def evaluate_transition(self, data) -> AbstractState:
         if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
             return State_Finished()
         elif(rospy.get_time() >=  self.__target_time_in_state + self.__state_entry_time):
@@ -173,7 +173,7 @@ class State_StopTurnRight(AbstractState):
         self.__target_time_in_state = 1.0
     def get_state_name(self) -> str:
         return "StopTurnRight"
-    def evaluate_transition(self) -> AbstractState:
+    def evaluate_transition(self, data) -> AbstractState:
         if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
             return State_Finished()
         elif(rospy.get_time() >=  self.__target_time_in_state + self.__state_entry_time):
@@ -186,7 +186,7 @@ class State_StopSend(AbstractState):
         super().__init__()
     def get_state_name(self) -> str:
         return "StopSend"
-    def evaluate_transition(self) -> AbstractState:
+    def evaluate_transition(self, data) -> AbstractState:
         if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
             return State_Finished()
         else:
@@ -204,7 +204,7 @@ class State_Finished(AbstractState):
         print("Ended Timer")
     def get_state_name(self) -> str:
         return "Finished"
-    def evaluate_transition(self) -> AbstractState:
+    def evaluate_transition(self, data) -> AbstractState:
         return self
     
 class State_Error(AbstractState):
@@ -212,7 +212,7 @@ class State_Error(AbstractState):
         super().__init__()
     def get_state_name(self) -> str:
         return "Error"
-    def evaluate_transition(self) -> AbstractState:
+    def evaluate_transition(self, data) -> AbstractState:
         if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
             return State_Finished()
         else:
@@ -224,6 +224,7 @@ class StateMachine:
         self.current_state = State_StartupTurnAndDrive()
         self.pub = rospy.Publisher('/competition_controller/state', String, queue_size=1)
         self.plate_stop_sub = rospy.Subscriber("/plate_reader/requested_driving_state", String, self.plate_stop_callback)
+        self.stop_states_lookup = {"StopTurnLeft": State_StopTurnLeft, "StopTurnRight": State_StopTurnRight, "Finished": State_Finished}
     
     def update_state(self, data):
         self.current_state = self.current_state.evaluate_transition(data)
@@ -236,19 +237,20 @@ class StateMachine:
         return self.current_state.get_state_name()
     
     def plate_stop_callback(self, data):
-        if(data.data == "Stop"):
+        if(data.data in ["Finished", "StopTurnRight", "StopTurnLeft"]):
             # If the command is to stop and we already are in a stop state, do nothing
-            if self.current_state.get_state_name() in ["StopTurnRight", "StopTurnLeft"]:
+            if self.current_state.get_state_name() in ["Finished", "StopTurnRight", "StopTurnLeft"]:
                 pass
             # If the command is to stop and we are not in a stop state, 
             # save the current state (so we can go back to it) and go to the stop state
             else:
                 self.prev_state_before_stop = self.current_state
-                self.current_state = State_StopTurnLeft()
+                # go to the state we are commanded to go to
+                self.current_state = self.stop_states_lookup[data.data]()
                 self.pub.publish(self.current_state.get_state_name())
         elif(data.data == "Drive"):
             # If the command is to drive and we are in a stop state, go back to the previous state
-            if self.current_state.get_state_name() in ["StopTurnRight", "StopTurnLeft"]:
+            if self.current_state.get_state_name() in ["Finished", "StopTurnRight", "StopTurnLeft"]:
                 self.current_state = self.prev_state_before_stop
                 self.pub.publish(self.current_state.get_state_name())
         else:

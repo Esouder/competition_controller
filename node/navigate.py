@@ -167,6 +167,16 @@ class Navigator():
         self.move.angular.z = 0
         self.move.linear.x = 0
 
+    def navigate_stop_turn_left(self, frame) -> None:
+        '''Turn left'''
+        self.move.angular.z = 0.5
+        self.move.linear.x = 0
+    
+    def navigate_stop_turn_right(self, frame) -> None:
+        '''Turn right'''
+        self.move.angular.z = -0.5
+        self.move.linear.x = 0
+
     def navigate(self, data):
         '''Run a navigation step based on a single frame'''
         frame = self.bridge.imgmsg_to_cv2(data, "bgr8")
@@ -178,6 +188,10 @@ class Navigator():
             self.navigate_pre_grass(frame)
         elif self.current_state == "GrassNavigate":
             self.navigate_grass(frame)
+        elif self.current_state == "StopTurnLeft":
+            self.navigate_stop_turn_left(frame)
+        elif self.current_state == "StopTurnRight":
+            self.navigate_stop_turn_right(frame)
         elif self.current_state == "Finished":
             self.navigate_stopped(frame)
         else:
@@ -194,7 +208,7 @@ class Navigator():
 def navigate_node(initiator_msg):
     navigator = Navigator()
     camera_sub = rospy.Subscriber("/R1/pi_camera/image_raw", Image, navigator.navigate)
-    state_sub = rospy.Subscriber("/state", String, navigator.update_state)
+    state_sub = rospy.Subscriber("/competition_controller/state", String, navigator.update_state)
     rospy.spin()
 
 if __name__ == '__main__':

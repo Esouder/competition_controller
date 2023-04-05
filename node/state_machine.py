@@ -150,6 +150,36 @@ class State_TransToInnerLoop(AbstractState):
             return State_Finished()
         else:
             return self
+        
+class State_StopTurnLeft(AbstractState):
+    def __init__(self):
+        super().__init__()
+        self.__state_entry_time = rospy.get_time()
+        self.__target_time_in_state = 1.0
+    def get_state_name(self, data) -> str:
+        return "StopTurnLeft"
+    def evaluate_transition(self) -> AbstractState:
+        if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
+            return State_Finished()
+        elif(rospy.get_time() >=  self.__target_time_in_state + self.__state_entry_time):
+            return State_StopTurnRight()
+        else:
+            return self
+
+class State_StopTurnRight(AbstractState):
+    def __init__(self):
+        super().__init__()
+        self.__state_entry_time = rospy.get_time()
+        self.__target_time_in_state = 1.0
+    def get_state_name(self, data) -> str:
+        return "StopTurnRight"
+    def evaluate_transition(self) -> AbstractState:
+        if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
+            return State_Finished()
+        elif(rospy.get_time() >=  self.__target_time_in_state + self.__state_entry_time):
+            return State_PaveNavigate()
+        else:
+            return self
    
 class State_StopSend(AbstractState):
     def __init__(self):
@@ -192,7 +222,8 @@ class State_Error(AbstractState):
 class StateMachine:
     def __init__(self):
         self.current_state = State_StartupTurnAndDrive()
-        self.pub = rospy.Publisher('/state', String, queue_size=1)
+        self.pub = rospy.Publisher('/competition_controller/state', String, queue_size=1)
+        self.plate_stop_sub = rospy.Subscriber("/plate_reader/requested_driving_state", String, self.plate_stop_callback)
     
     def update_state(self, data):
         self.current_state = self.current_state.evaluate_transition(data)
@@ -203,6 +234,25 @@ class StateMachine:
 
     def get_current_state_name(self):
         return self.current_state.get_state_name()
+    
+    def plate_stop_callback(self, data):
+        if(data.data == "Stop"):
+            # If the command is to stop and we already are in a stop state, do nothing
+            if self.current_state.get_state_name() in ["StopTurnRight", "StopTurnLeft"]:
+                pass
+            # If the command is to stop and we are not in a stop state, 
+            # save the current state (so we can go back to it) and go to the stop state
+            else:
+                self.prev_state_before_stop = self.current_state
+                self.current_state = State_StopTurnLeft()
+                self.pub.publish(self.current_state.get_state_name())
+        elif(data.data == "Drive"):
+            # If the command is to drive and we are in a stop state, go back to the previous state
+            if self.current_state.get_state_name() in ["StopTurnRight", "StopTurnLeft"]:
+                self.current_state = self.prev_state_before_stop
+                self.pub.publish(self.current_state.get_state_name())
+        else:
+            print("Error: Invalid driving state requested")
     
 
 

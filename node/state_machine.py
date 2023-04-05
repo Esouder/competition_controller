@@ -18,7 +18,7 @@ from surface_detector import SurfaceDetector
 
 surface_detector = None
 competition_start_time = None
-MAX_COMPETITION_TIME = 1.0*60 # Automatically send end message after this time
+MAX_COMPETITION_TIME = 3.75*60 # Automatically send end message after this time
 
 ### Abstract State ###
 
@@ -43,7 +43,7 @@ class State_StartupTurnAndDrive(AbstractState):
         super().__init__()
         time.sleep(1)
         self.__state_entry_time = rospy.get_time()
-        self.__target_time_in_state = 2
+        self.__target_time_in_state = 1.0
         self.stateEntryAction()
     def stateEntryAction(self):
         global competition_start_time

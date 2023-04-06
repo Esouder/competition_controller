@@ -177,6 +177,11 @@ class Navigator():
         '''Navigate during initial startup'''
         self.move.angular.z = 0.5
         self.move.linear.x = 0.15
+
+    def navigate_crosswalk_traverse(self, frame) ->None:
+        '''Navigate during crosswalk traversal'''
+        self.move.angular.z = 0
+        self.move.linear.x = 0.5
     
     def navigate_stopped(self, frame) -> None:
         '''Navigate, but, like, don't'''
@@ -210,6 +215,8 @@ class Navigator():
             self.navigate_stop_turn_right(frame)
         elif self.current_state == "CrosswalkWait":
             self.navigate_stopped(frame)
+        elif self.current_state == "CrosswalkTraverse":
+            self.navigate_crosswalk_traverse(frame)
         elif self.current_state == "Finished":
             self.navigate_stopped(frame)
         else:

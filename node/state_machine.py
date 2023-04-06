@@ -95,7 +95,7 @@ class State_PreGrassNavigate(AbstractState):
     def get_state_name(self) -> str:
         return "PreGrassNavigate"
     def evaluate_transition(self, data) -> AbstractState:
-        if(rospy.get_time() > competition_start_time + 3.75*60):
+        if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
             return State_Finished()
         elif(rospy.get_time() >=  self.__target_time_in_state + self.__state_entry_time):
             return State_GrassNavigate()
@@ -127,24 +127,36 @@ class State_CrosswalkWait(AbstractState):
         super().__init__()
         self.__state_entry_time = rospy.get_time()
         self.__target_time_in_state = 0.5
+        self.pedestrianState = "waiting"
+        self.middle = 600
+        self.middle_width = 200
     def get_state_name(self) -> str:
         return "CrosswalkWait"
     def evaluate_transition(self, data) -> AbstractState:
+        pedestrain_location = pedestrian_detector.detectPants(data)
+        print(pedestrain_location[0])
         if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
             return State_Finished()
-        elif(rospy.get_time() >=  self.__target_time_in_state + self.__state_entry_time):
-            return State_PaveNavigate() 
+        elif(self.middle - self.middle_width < pedestrain_location[0] < self.middle +self.middle_width):
+            self.pedestrianState = "crossing"
+            return self
+        elif(self.pedestrianState == "crossing" and (self.middle - self.middle_width > pedestrain_location[0] or pedestrain_location[0] > self.middle +self.middle_width)):
+            return State_CrosswalkTraverse()
         else:
             return self
     
 class State_CrosswalkTraverse(AbstractState):
     def __init__(self):
         super().__init__()
+        self.__state_entry_time = rospy.get_time()
+        self.__target_time_in_state = 0.75
     def get_state_name(self) -> str:
         return "CrosswalkTraverse"
-    def evaluateTransition(self, data) -> AbstractState:
+    def evaluate_transition(self, data) -> AbstractState:
         if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
             return State_Finished()
+        elif(rospy.get_time() >=  self.__target_time_in_state + self.__state_entry_time):
+            return State_PaveNavigate()
         else:
             return self
 

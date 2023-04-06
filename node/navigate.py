@@ -51,8 +51,8 @@ class Navigator():
                     cv2.line(frame_lines, (x1, y1), (x2, y2), (255, 255, 255), 2)
                     cv2.line(frame_out, (x1, y1+400), (x2, y2+400), (0, 0, 255), 2)
             frame_lines_grey = cv2.cvtColor(frame_lines, cv2.COLOR_BGR2GRAY)
-            cv2.imshow("OBSERVE HYPNOTOAD", frame_lines_grey)
-            cv2.waitKey(3)
+            # cv2.imshow("OBSERVE HYPNOTOAD", frame_lines_grey)
+            # cv2.waitKey(3)
             sum_x = 0
             pixel_count = 1
             height = frame_lines_grey.shape[0]
@@ -239,7 +239,7 @@ def navigate_node(initiator_msg):
 if __name__ == '__main__':
     # What an ugly piece of boilerplate. This is why people hate you, Python
     # Wait until the competition controller tells us to start
-    rospy.init_node('navigate_node')
+    rospy.init_node('navigate')
     start_subscriber = rospy.Subscriber("/competition_controller/start", String, navigate_node)
     print("----------------------------------------")
     print("Waiting for competition controller to start")

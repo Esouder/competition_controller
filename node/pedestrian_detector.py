@@ -56,6 +56,7 @@ class PedestrianDetector:
         #     cv2.rectangle(out_frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
         local_out_frame = frame
         cv2.rectangle(local_out_frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+        cv2.putText(local_out_frame, f"({x}, {y})", (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,0,0),2)
         self.ped_annotated_pub.publish(self.bridge.cv2_to_imgmsg(local_out_frame, "bgr8"))
         # cv2.imshow("PANTS",local_out_frame)
         # cv2.waitKey(3)

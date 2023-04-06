@@ -7,6 +7,7 @@ import numpy as np
 import cv2
 from cv_bridge import CvBridge
 
+NAVIGATION_SETPOINT = 0.80
 
 class Navigator():
     def __init__(self):
@@ -16,19 +17,20 @@ class Navigator():
         self.annotated_feed_pub = rospy.Publisher("/competition_controller/image_annotated", Image, queue_size=1)
         self.bridge = CvBridge()
 
-    def get_adaptive_speed_factor(self, error, threshold, max_factor):
-        if(abs(error)>threshold):
-            asf = 1
-        else:
-            asf = (((threshold**2)-(error**2))**2) / ((threshold**4) * max_factor) + 1
-            print(asf)
+    # def get_adaptive_speed_factor(self, error, threshold, max_factor):
+    #     if(abs(error)>threshold):
+    #         asf = 1
+    #     else:
+    #         # Scales between 1 and max_factor
+    #         asf = (((threshold**2)-(error**2))**2)/(threshold**4) * max_factor + 1 
+    #         print(asf)
 
-        return asf
+    #     return asf
     
     def navigate_pave(self, frame) -> None:
         '''Navigation algorithm based on pavement'''
         frame_out = frame.copy()
-        kP = 0.005
+        kP = 0.0075
         kD = 0.001
         frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         frame_blues = frame_hsv
@@ -73,8 +75,8 @@ class Navigator():
         # cv2.waitKey(3)
         self.annotated_feed_pub.publish(self.bridge.cv2_to_imgmsg(frame_out, "bgr8"))
 
-        error = width*0.75 - x_avg
-        self.move.linear.x = 0.125
+        error = width*NAVIGATION_SETPOINT - x_avg
+        self.move.linear.x = 0.20
         #derivative = prev_error-error
         #cv2.putText(frame_out, f"error:{error} | derivative: {derivative}", (100,200), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,0,0),2)
         if(x_avg<=1):
@@ -86,7 +88,7 @@ class Navigator():
 
     def navigate_pre_grass(self, frame) -> None:
         '''short turn to get onto the grass'''
-        self.move.angular.z = 0.5
+        self.move.angular.z = 0.65
         self.move.linear.x = 0.15
 
 
@@ -155,7 +157,7 @@ class Navigator():
         # cv2.waitKey(3)
         self.annotated_feed_pub.publish(self.bridge.cv2_to_imgmsg(frame_out, "bgr8"))
 
-        error = width*0.75 - x_avg
+        error = width*NAVIGATION_SETPOINT - x_avg
         #cv2.line(frame_out, (x_avg, out_height-100), (x_avg, out_height-1), (0, 255, 0), thickness=10)
         #cv2.line(frame_out, (0, navigation_start), (out_width-1, navigation_start), (0, 0, 255), thickness=10)
         #cv2.line(frame_out, (0, navigation_end), (out_width-1, navigation_end), (0, 0, 255), thickness=10)

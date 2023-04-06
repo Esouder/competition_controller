@@ -90,6 +90,65 @@ class Navigator():
         
         prev_error = error
 
+    def navigate_pave_left(self, frame) -> None:
+        '''Navigation algorithm based on pavement'''
+        frame_out = frame.copy()
+        kP = 0.005
+        kD = 0.001
+        frame_hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        frame_blues = frame_hsv
+        frame_blues[:, :, 1] = 0
+        frame_blues[:, :, 2] = 0
+        frame_grey = cv2.cvtColor(frame_blues, cv2.COLOR_BGR2GRAY)
+        _, frame_threshold = cv2.threshold(frame_grey, 0, 255, cv2.THRESH_BINARY_INV)
+        frame_sobel = cv2.Sobel(frame_threshold, cv2.CV_64F, 1, 1, ksize=3)
+        frame_corrected = frame_sobel.astype(np.uint8)
+        frame_cropped = frame_corrected[400:-1][0:-1]
+        lines = cv2.HoughLinesP(frame_cropped, 1, np.pi/180, 150, minLineLength=250, maxLineGap=250)
+        height = frame.shape[0]
+        width = frame.shape[1]
+        frame_lines = np.zeros((height-400,width,3), np.uint8)
+        detection_area_top = 200
+        detection_area_bottom = 100
+        try:
+            for line in lines:
+                for x1, y1, x2, y2 in line:
+                    cv2.line(frame_lines, (x1, y1), (x2, y2), (255, 255, 255), 2)
+                    cv2.line(frame_out, (x1, y1+400), (x2, y2+400), (0, 0, 255), 2)
+            frame_lines_grey = cv2.cvtColor(frame_lines, cv2.COLOR_BGR2GRAY)
+            cv2.imshow("OBSERVE HYPNOTOAD", frame_lines_grey)
+            cv2.waitKey(3)
+            sum_x = 0
+            pixel_count = 1
+            height = frame_lines_grey.shape[0]
+            width = frame_lines_grey.shape[1]
+
+            for y in range(height-detection_area_top,height-detection_area_bottom):
+              for x in range(0,int(width/2)):
+                 if frame_lines_grey[y][x]:
+                      sum_x += x
+                      pixel_count+=1
+            x_avg = int(sum_x / pixel_count)
+        except TypeError:
+            x_avg = 0
+
+        # Place a line at the average x position on the image
+        cv2.line(frame_out, (x_avg, height-detection_area_top+400), (x_avg, height-detection_area_bottom+400), (0, 255, 0), thickness=10)
+        # cv2.imshow("XAVG", frame_out)
+        # cv2.waitKey(3)
+        self.annotated_feed_pub.publish(self.bridge.cv2_to_imgmsg(frame_out, "bgr8"))
+
+        error = width*0.25 - x_avg
+        self.move.linear.x = 0.25
+        #derivative = prev_error-error
+        #cv2.putText(frame_out, f"error:{error} | derivative: {derivative}", (100,200), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,0,0),2)
+        if(x_avg<=1):
+            self.move.angular.z = 0
+        else:
+            self.move.angular.z = error*kP #+ derivative*kD
+        
+        prev_error = error
+
     def navigate_pre_grass(self, frame) -> None:
         '''short turn to get onto the grass'''
         self.move.angular.z = 0.65
@@ -211,6 +270,8 @@ class Navigator():
             self.navigate_startup(frame)
         elif self.current_state == "PaveNavigate":
             self.navigate_pave(frame)
+        elif self.current_state == "PaveNavigateLeft":
+            self.navigate_pave_left(frame)
         elif self.current_state == "PreGrassNavigate":
             self.navigate_pre_grass(frame)
         elif self.current_state == "GrassNavigate":

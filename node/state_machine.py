@@ -14,11 +14,13 @@ from tensorflow.python.keras import optimizers
 
 from surface_detector import SurfaceDetector
 from pedestrian_detector import PedestrianDetector
+from junction_detector import JunctionDetector
 
 # eww globals
 
 surface_detector = None
 pedestrian_detector = PedestrianDetector()
+junction_detector = JunctionDetector()
 competition_start_time = None
 
 # Constants
@@ -88,6 +90,32 @@ class State_PaveNavigate(AbstractState):
         else:
             self.previous_transitions = 0
             return self
+        
+class State_PaveNavigateLeft(AbstractState):
+    def __init__(self):
+        super().__init__()
+    def get_state_name(self) -> str:
+        return "PaveNavigateLeft"
+    def evaluate_transition(self, data) -> AbstractState:
+        if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
+            return State_Finished()
+        if(junction_detector.detect_junction(data)):
+            return State_JunctionWait()
+        else:
+            self.previous_transitions = 0
+            return self
+        
+class State_JunctionWait(AbstractState):
+    def __init__(self):
+        super().__init__()
+    def get_state_name(self) -> str:
+        return "JunctionWait"
+    def evaluate_transition(self, data) -> AbstractState:
+        if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
+            return State_Finished()
+        else:
+            return self
+        
 
 class State_PreGrassNavigate(AbstractState):
     def __init__(self):
@@ -116,7 +144,7 @@ class State_GrassNavigate(AbstractState):
         current_surface = surface_detector.poll(data)
         if current_surface == SurfaceDetector.RoadSurface.PAVEMENT:
             if(self.previous_transitions > 5):
-                return State_PaveNavigate()
+                return State_PaveNavigateLeft()
             else:
                 self.previous_transitions += 1
                 return self

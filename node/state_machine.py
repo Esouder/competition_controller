@@ -43,7 +43,7 @@ class State_StartupTurnAndDrive(AbstractState):
         super().__init__()
         time.sleep(1)
         self.__state_entry_time = rospy.get_time()
-        self.__target_time_in_state = 1.0
+        self.__target_time_in_state = 10.0
         self.stateEntryAction()
     def stateEntryAction(self):
         global competition_start_time
@@ -264,8 +264,8 @@ class StateMachine:
 def state_machine_node(initiator_msg):
     global surface_detector
     print(rospy.get_time())
-    state_machine = StateMachine()
     surface_detector = SurfaceDetector()
+    state_machine = StateMachine()
     sub = rospy.Subscriber("/R1/pi_camera/image_raw", Image, state_machine.update_state)
     rospy.spin()
 

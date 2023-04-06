@@ -192,13 +192,13 @@ class Navigator():
 
     def navigate_stop_turn_left(self, frame) -> None:
         '''Turn left'''
-        self.move.angular.z = 0.2
-        self.move.linear.x = -0.02
+        self.move.angular.z = 0.1
+        self.move.linear.x = -0.01
     
     def navigate_stop_turn_right(self, frame) -> None:
         '''Turn right'''
-        self.move.angular.z = -0.2
-        self.move.linear.x = -0.02
+        self.move.angular.z = -0.1
+        self.move.linear.x = -0.01
 
     def navigate(self, data):
         '''Run a navigation step based on a single frame'''

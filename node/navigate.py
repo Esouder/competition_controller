@@ -38,6 +38,10 @@ class Navigator():
         frame_blues[:, :, 2] = 0
         frame_grey = cv2.cvtColor(frame_blues, cv2.COLOR_BGR2GRAY)
         _, frame_threshold = cv2.threshold(frame_grey, 0, 255, cv2.THRESH_BINARY_INV)
+
+        kernel = np.ones((9,9),np.uint8)
+        frame_threshold = cv2.dilate(frame_threshold,kernel,iterations = 1)
+
         frame_sobel = cv2.Sobel(frame_threshold, cv2.CV_64F, 1, 1, ksize=3)
         frame_corrected = frame_sobel.astype(np.uint8)
         frame_cropped = frame_corrected[400:-1][0:-1]
@@ -76,7 +80,7 @@ class Navigator():
         self.annotated_feed_pub.publish(self.bridge.cv2_to_imgmsg(frame_out, "bgr8"))
 
         error = width*NAVIGATION_SETPOINT - x_avg
-        self.move.linear.x = 0.20
+        self.move.linear.x = 0.25
         #derivative = prev_error-error
         #cv2.putText(frame_out, f"error:{error} | derivative: {derivative}", (100,200), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,0,0),2)
         if(x_avg<=1):

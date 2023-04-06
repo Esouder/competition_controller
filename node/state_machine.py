@@ -20,6 +20,8 @@ from pedestrian_detector import PedestrianDetector
 surface_detector = None
 pedestrian_detector = PedestrianDetector()
 competition_start_time = None
+
+# Constants
 MAX_COMPETITION_TIME = 3.75*60 # Automatically send end message after this time
 
 ### Abstract State ###
@@ -45,7 +47,7 @@ class State_StartupTurnAndDrive(AbstractState):
         super().__init__()
         time.sleep(1)
         self.__state_entry_time = rospy.get_time()
-        self.__target_time_in_state = 3.5
+        self.__target_time_in_state = 3.0
         self.stateEntryAction()
     def stateEntryAction(self):
         global competition_start_time
@@ -59,7 +61,7 @@ class State_StartupTurnAndDrive(AbstractState):
         return "StartupTurnAndDrive"
     def evaluate_transition(self, data) -> AbstractState:
         if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
-            return State_Finished()
+            return State_Finished(self.get_state_name())
         elif(rospy.get_time() >=  self.__target_time_in_state + self.__state_entry_time):
             return State_PaveNavigate()
         else:
@@ -73,7 +75,7 @@ class State_PaveNavigate(AbstractState):
         return "PaveNavigate"
     def evaluate_transition(self, data) -> AbstractState:
         if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
-            return State_Finished()
+            return State_Finished(self.get_state_name())
         if(pedestrian_detector.detectCrosswalk(data)):
             return State_CrosswalkWait()
         current_surface = surface_detector.poll(data)
@@ -96,7 +98,7 @@ class State_PreGrassNavigate(AbstractState):
         return "PreGrassNavigate"
     def evaluate_transition(self, data) -> AbstractState:
         if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
-            return State_Finished()
+            return State_Finished(self.get_state_name())
         elif(rospy.get_time() >=  self.__target_time_in_state + self.__state_entry_time):
             return State_GrassNavigate()
         else:
@@ -110,7 +112,7 @@ class State_GrassNavigate(AbstractState):
         return "GrassNavigate"
     def evaluate_transition(self, data) -> AbstractState:
         if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
-            return State_Finished()
+            return State_Finished(self.get_state_name())
         current_surface = surface_detector.poll(data)
         if current_surface == SurfaceDetector.RoadSurface.PAVEMENT:
             if(self.previous_transitions > 5):
@@ -128,19 +130,20 @@ class State_CrosswalkWait(AbstractState):
         self.__state_entry_time = rospy.get_time()
         self.__target_time_in_state = 0.5
         self.pedestrianState = "waiting"
-        self.middle = 600
-        self.middle_width = 200
+        self.middle = 650
+        self.cross_half_width = 200
     def get_state_name(self) -> str:
         return "CrosswalkWait"
     def evaluate_transition(self, data) -> AbstractState:
+        # Pedestrian ~400 left and ~900 right
         pedestrain_location = pedestrian_detector.detectPants(data)
-        print(pedestrain_location[0])
         if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
-            return State_Finished()
-        elif(self.middle - self.middle_width < pedestrain_location[0] < self.middle +self.middle_width):
+            return State_Finished(self.get_state_name())
+        # if the pedestrian is in the middle of the crosswalk
+        elif(self.middle - self.cross_half_width < pedestrain_location[0] < self.middle +self.cross_half_width):
             self.pedestrianState = "crossing"
             return self
-        elif(self.pedestrianState == "crossing" and (self.middle - self.middle_width > pedestrain_location[0] or pedestrain_location[0] > self.middle +self.middle_width)):
+        elif(self.pedestrianState == "crossing" and (self.middle - self.cross_half_width > pedestrain_location[0] or pedestrain_location[0] > self.middle +self.cross_half_width)):
             return State_CrosswalkTraverse()
         else:
             return self
@@ -154,7 +157,7 @@ class State_CrosswalkTraverse(AbstractState):
         return "CrosswalkTraverse"
     def evaluate_transition(self, data) -> AbstractState:
         if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
-            return State_Finished()
+            return State_Finished(self.get_state_name())
         elif(rospy.get_time() >=  self.__target_time_in_state + self.__state_entry_time):
             return State_PaveNavigate()
         else:
@@ -167,7 +170,7 @@ class State_TransToInnerLoop(AbstractState):
         return "TransToInnerLoop"
     def evaluate_transition(self, data) -> AbstractState:
         if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
-            return State_Finished()
+            return State_Finished(self.get_state_name())
         else:
             return self
         
@@ -180,7 +183,7 @@ class State_StopTurnLeft(AbstractState):
         return "StopTurnLeft"
     def evaluate_transition(self, data) -> AbstractState:
         if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
-            return State_Finished()
+            return State_Finished(self.get_state_name())
         elif(rospy.get_time() >=  self.__target_time_in_state + self.__state_entry_time):
             return State_StopTurnRight()
         else:
@@ -195,7 +198,7 @@ class State_StopTurnRight(AbstractState):
         return "StopTurnRight"
     def evaluate_transition(self, data) -> AbstractState:
         if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
-            return State_Finished()
+            return State_Finished(self.get_state_name())
         elif(rospy.get_time() >=  self.__target_time_in_state + self.__state_entry_time):
             return State_PaveNavigate()
         else:
@@ -208,13 +211,14 @@ class State_StopSend(AbstractState):
         return "StopSend"
     def evaluate_transition(self, data) -> AbstractState:
         if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
-            return State_Finished()
+            return State_Finished(self.get_state_name())
         else:
             return self
     
 class State_Finished(AbstractState):
-    def __init__(self):
+    def __init__(self, called_by = "Unknown"):
         super().__init__()
+        print("Called by: " + called_by)
         self.stateEntryAction()
     def stateEntryAction(self):
         start_publisher = rospy.Publisher("/license_plate", String, queue_size=1)
@@ -234,7 +238,7 @@ class State_Error(AbstractState):
         return "Error"
     def evaluate_transition(self, data) -> AbstractState:
         if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
-            return State_Finished()
+            return State_Finished(self.get_state_name())
         else:
             return self
 
@@ -244,7 +248,7 @@ class StateMachine:
         self.current_state = State_StartupTurnAndDrive()
         self.pub = rospy.Publisher('/competition_controller/state', String, queue_size=1)
         self.plate_stop_sub = rospy.Subscriber("/plate_reader/requested_driving_state", String, self.plate_stop_callback)
-        self.stop_states_lookup = {"StopTurnLeft": State_StopTurnLeft, "StopTurnRight": State_StopTurnRight, "Finished": State_Finished}
+        self.stop_states_lookup = {"StopTurnLeft": State_StopTurnLeft, "StopTurnRight": State_StopTurnRight}
     
     def update_state(self, data):
         self.current_state = self.current_state.evaluate_transition(data)
@@ -257,9 +261,9 @@ class StateMachine:
         return self.current_state.get_state_name()
     
     def plate_stop_callback(self, data):
-        if(data.data in ["Finished", "StopTurnRight", "StopTurnLeft"]):
+        if(data.data in ["StopTurnRight", "StopTurnLeft"]):
             # If the command is to stop and we already are in a stop state, do nothing
-            if self.current_state.get_state_name() in ["Finished", "StopTurnRight", "StopTurnLeft"]:
+            if self.current_state.get_state_name() in ["StopTurnRight", "StopTurnLeft"]:
                 pass
             # If the command is to stop and we are not in a stop state, 
             # save the current state (so we can go back to it) and go to the stop state
@@ -270,7 +274,7 @@ class StateMachine:
                 self.pub.publish(self.current_state.get_state_name())
         elif(data.data == "Drive"):
             # If the command is to drive and we are in a stop state, go back to the previous state
-            if self.current_state.get_state_name() in ["Finished", "StopTurnRight", "StopTurnLeft"]:
+            if self.current_state.get_state_name() in ["StopTurnRight", "StopTurnLeft"]:
                 self.current_state = self.prev_state_before_stop
                 self.pub.publish(self.current_state.get_state_name())
         else:

@@ -1,11 +1,15 @@
 #import rospy
 import cv2
 from cv_bridge import CvBridge
+from sensor_msgs.msg import Image
+import rospy
 import numpy as np
 
 class PedestrianDetector:
     def __init__(self):
         self.bridge = CvBridge()
+        self.ped_annotated_pub = rospy.Publisher("/pedestrian_detector/image_annotated", Image, queue_size=1)
+
     def detectCrosswalk(self, data):
         frame = self.bridge.imgmsg_to_cv2(data, "bgr8")
         MINIMUM_VALID_POINTS = 1500
@@ -22,8 +26,8 @@ class PedestrianDetector:
                 if greyscale_image[y][x]:
                     sum += 1
         cv2.putText(frame, f"count:{sum}", (100,200), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,0,0),2)
-        cv2.imshow("Crosswalk", greyscale_image)
-        cv2.waitKey(3)
+        # cv2.imshow("Crosswalk", greyscale_image)
+        # cv2.waitKey(3)
 
         return sum > MINIMUM_VALID_POINTS
     
@@ -52,8 +56,10 @@ class PedestrianDetector:
         #     cv2.rectangle(out_frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
         local_out_frame = frame
         cv2.rectangle(local_out_frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
-        cv2.imshow("PANTS",local_out_frame)
-        cv2.waitKey(3)
+        cv2.putText(local_out_frame, f"({x}, {y})", (x, y), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,0,0),2)
+        self.ped_annotated_pub.publish(self.bridge.cv2_to_imgmsg(local_out_frame, "bgr8"))
+        # cv2.imshow("PANTS",local_out_frame)
+        # cv2.waitKey(3)
         return x+w/2, y+h/2
 
 

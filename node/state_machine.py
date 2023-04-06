@@ -170,7 +170,7 @@ class State_StopTurnRight(AbstractState):
     def __init__(self):
         super().__init__()
         self.__state_entry_time = rospy.get_time()
-        self.__target_time_in_state = 1.0
+        self.__target_time_in_state = 4.0
     def get_state_name(self) -> str:
         return "StopTurnRight"
     def evaluate_transition(self, data) -> AbstractState:

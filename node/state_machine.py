@@ -13,10 +13,12 @@ from tensorflow.python.keras import models
 from tensorflow.python.keras import optimizers
 
 from surface_detector import SurfaceDetector
+from pedestrian_detector import PedestrianDetector
 
 # eww globals
 
 surface_detector = None
+pedestrian_detector = PedestrianDetector()
 competition_start_time = None
 MAX_COMPETITION_TIME = 3.75*60 # Automatically send end message after this time
 
@@ -43,7 +45,7 @@ class State_StartupTurnAndDrive(AbstractState):
         super().__init__()
         time.sleep(1)
         self.__state_entry_time = rospy.get_time()
-        self.__target_time_in_state = 1.0
+        self.__target_time_in_state = 3.5
         self.stateEntryAction()
     def stateEntryAction(self):
         global competition_start_time
@@ -72,6 +74,8 @@ class State_PaveNavigate(AbstractState):
     def evaluate_transition(self, data) -> AbstractState:
         if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
             return State_Finished()
+        if(pedestrian_detector.detectCrosswalk(data)):
+            return State_CrosswalkWait()
         current_surface = surface_detector.poll(data)
         if current_surface == SurfaceDetector.RoadSurface.GRASS:
             if(self.previous_transitions > 9):
@@ -87,7 +91,7 @@ class State_PreGrassNavigate(AbstractState):
     def __init__(self):
         super().__init__()
         self.__state_entry_time = rospy.get_time()
-        self.__target_time_in_state = 2.0
+        self.__target_time_in_state = 3.0
     def get_state_name(self) -> str:
         return "PreGrassNavigate"
     def evaluate_transition(self, data) -> AbstractState:
@@ -121,11 +125,15 @@ class State_GrassNavigate(AbstractState):
 class State_CrosswalkWait(AbstractState):
     def __init__(self):
         super().__init__()
+        self.__state_entry_time = rospy.get_time()
+        self.__target_time_in_state = 0.5
     def get_state_name(self) -> str:
         return "CrosswalkWait"
     def evaluate_transition(self, data) -> AbstractState:
         if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
             return State_Finished()
+        elif(rospy.get_time() >=  self.__target_time_in_state + self.__state_entry_time):
+            return State_PaveNavigate() 
         else:
             return self
     

@@ -180,7 +180,7 @@ class State_CrosswalkTraverse(AbstractState):
     def __init__(self):
         super().__init__()
         self.__state_entry_time = rospy.get_time()
-        self.__target_time_in_state = 0.75
+        self.__target_time_in_state = 1
     def get_state_name(self) -> str:
         return "CrosswalkTraverse"
     def evaluate_transition(self, data) -> AbstractState:

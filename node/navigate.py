@@ -113,7 +113,7 @@ class Navigator():
         #cv2.imshow("CROPPED", frame_cropped)
         #cv2.waitKey(3)
 
-        lines = cv2.HoughLinesP(frame_cropped, 1, np.pi/180, 100, minLineLength=50, maxLineGap=500)
+        lines = cv2.HoughLinesP(frame_cropped, 1, np.pi/180, 50, minLineLength=75, maxLineGap=250)
         
         frame_threshold_out = frame_threshold.copy()
         cv2.rectangle(frame_threshold_out, (0,height), (int(width/2),400), (255,0,0), 2)
@@ -172,7 +172,7 @@ class Navigator():
 
         frame_out = frame
 
-        kP = 0.004
+        kP = 0.01
         kD = 0.001
         lower = np.array([28, 41, 106])
         upper = np.array([37, 79, 255])
@@ -236,7 +236,7 @@ class Navigator():
         try:
             for line in lines:
                 for x1, y1, x2, y2 in line:
-                    cv2.line(frame_out, (x1+640, y1+300), (x2+640, y2+300), (0, 0, 255), 2)
+                    cv2.line(frame_out, (x1+640, y1+400), (x2+640, y2+400), (0, 0, 255), 2)
         except TypeError:
             print("bad")
         cv2.line(frame_out, (x_avg, frame_out.shape[0]-200), (x_avg, frame_out.shape[0]-100), (0, 255, 0), thickness=10)
@@ -258,7 +258,7 @@ class Navigator():
         else:
             self.move.angular.z = error*kP
 
-        self.move.linear.x = 0.1
+        self.move.linear.x = 0.2
 
         # cv2.imshow("DEBUG", frame_out)
     
@@ -296,6 +296,8 @@ class Navigator():
             self.navigate_pave(frame)
         elif self.current_state == "PaveNavigateLeft":
             self.navigate_pave_left(frame)
+        elif self.current_state == "JunctionWait":
+            self.navigate_stopped(frame)
         elif self.current_state == "PreGrassNavigate":
             self.navigate_pre_grass(frame)
         elif self.current_state == "GrassNavigate":

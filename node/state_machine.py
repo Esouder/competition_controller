@@ -94,16 +94,59 @@ class State_PaveNavigate(AbstractState):
 class State_PaveNavigateLeft(AbstractState):
     def __init__(self):
         super().__init__()
+        self.__state_entry_time = rospy.get_time()
+        self.widening_threshold = 1000
+        self.narrowest_point = self.widening_threshold
+        self.post_narrow_counter = 0
+        self.post_narrow_counter_trigger = 17
+        self.detection_start_time = 3
+        self.has_widened = False
+        self.finished_widening = False
+        self.has_passed_time_debug = False
     def get_state_name(self) -> str:
         return "PaveNavigateLeft"
     def evaluate_transition(self, data) -> AbstractState:
+        width = junction_detector.detect_width(data)
         if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
             return State_Finished()
-        if(junction_detector.detect_junction(data)):
-            return State_JunctionWait()
-        else:
-            self.previous_transitions = 0
-            return self
+        
+        if rospy.get_time() > self.__state_entry_time + self.detection_start_time:
+            if not self.has_passed_time_debug:
+                print("beginning detection")
+                self.has_passed_time_debug = True
+            if width > self.widening_threshold:
+                self.has_widened = True
+            if width < self.narrowest_point and self.has_widened:
+                self.finished_widening = True
+                self.narrowest_point = width
+                self.post_narrow_counter = 0
+            if width > self.narrowest_point and self.finished_widening:
+                if self.post_narrow_counter < self.post_narrow_counter_trigger:
+                    self.post_narrow_counter += 1
+                else:
+                    return State_JunctionWait()
+        
+        # if self.positive_function_secondary_count == 0:
+        #     if(junction_detector.detect_junction(data)):
+        #         self.positive_junction_count += 1
+        #         if(self.positive_junction_count >= 15):
+        #             self.positive_function_secondary_count += 1
+        #     else:
+        #         self.positive_junction_count = 0
+        #     return self
+        # else:
+        #     if(junction_detector.detect_junction(data)):
+        #         self.positive_junction_count += 1
+        #         if(self.positive_junction_count >= 3):
+        #             return State_JunctionWait()
+        #         else:
+        #             return self
+        #     else:
+        #         self.positive_junction_count = 0
+        #        return self
+        return self
+                
+
         
 class State_JunctionWait(AbstractState):
     def __init__(self):

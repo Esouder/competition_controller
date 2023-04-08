@@ -121,7 +121,7 @@ class State_PreGrassNavigate(AbstractState):
     def __init__(self):
         super().__init__()
         self.__state_entry_time = rospy.get_time()
-        self.__target_time_in_state = 3.0
+        self.__target_time_in_state = 1
     def get_state_name(self) -> str:
         return "PreGrassNavigate"
     def evaluate_transition(self, data) -> AbstractState:

@@ -145,8 +145,32 @@ class State_PaveNavigateLeft(AbstractState):
         #         self.positive_junction_count = 0
         #        return self
         return self
+    
+class State_PrePaveNavigateInside(AbstractState):
+    def __init__(self):
+        super().__init__()
+        self.__state_entry_time = rospy.get_time()
+        self.__target_time_in_state = 1
+    def get_state_name(self) -> str:
+        return "PrePaveNavigateInside"
+    def evaluate_transition(self, data) -> AbstractState:
+        if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
+            return State_Finished(self.get_state_name())
+        elif(rospy.get_time() >=  self.__target_time_in_state + self.__state_entry_time):
+            return State_PaveNavigateInside()
+        else:
+            return self
                 
-
+class State_PaveNavigateInside(AbstractState):
+    def __init__(self):
+        super().__init__()
+    def get_state_name(self) -> str:
+        return "PaveNavigateInside"
+    def evaluate_transition(self, data) -> AbstractState:
+        if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
+            return State_Finished(self.get_state_name())
+        else:
+            return self
         
 class State_JunctionWait(AbstractState):
     def __init__(self):
@@ -159,7 +183,7 @@ class State_JunctionWait(AbstractState):
         if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
             return State_Finished()
         elif 0 < pos_x < 400 and 0< pos_y < 700:
-            return State_PaveNavigate()
+            return State_PrePaveNavigateInside()
         else:
             return self
         
@@ -235,17 +259,6 @@ class State_CrosswalkTraverse(AbstractState):
             return State_Finished(self.get_state_name())
         elif(rospy.get_time() >=  self.__target_time_in_state + self.__state_entry_time):
             return State_PaveNavigate()
-        else:
-            return self
-
-class State_TransToInnerLoop(AbstractState):
-    def __init__(self):
-        super().__init__()
-    def get_state_name(self) -> str:
-        return "TransToInnerLoop"
-    def evaluate_transition(self, data) -> AbstractState:
-        if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
-            return State_Finished(self.get_state_name())
         else:
             return self
         

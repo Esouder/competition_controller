@@ -154,8 +154,12 @@ class State_JunctionWait(AbstractState):
     def get_state_name(self) -> str:
         return "JunctionWait"
     def evaluate_transition(self, data) -> AbstractState:
+        pos_x, pos_y = junction_detector.detect_truck(data)
+        print(f"x: {pos_x}, y: {pos_y}")
         if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
             return State_Finished()
+        elif 0 < pos_x < 400 and 0< pos_y < 700:
+            return State_PaveNavigate()
         else:
             return self
         

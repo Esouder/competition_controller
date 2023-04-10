@@ -43,13 +43,11 @@ class AbstractState(ABC):
         pass
 
 ### Actual States ###
-    
-class State_StartupTurnAndDrive(AbstractState):
+class State_StartupStraight(AbstractState):
     def __init__(self):
         super().__init__()
-        time.sleep(1)
         self.__state_entry_time = rospy.get_time()
-        self.__target_time_in_state = 3.0
+        self.__target_time_in_state = 2.2
         self.stateEntryAction()
     def stateEntryAction(self):
         global competition_start_time
@@ -59,6 +57,22 @@ class State_StartupTurnAndDrive(AbstractState):
         competition_begin_message = str("Team4,multi21,0,AA00")
         start_publisher.publish(competition_begin_message)
         print("Began Timer")
+    def get_state_name(self) -> str:
+        return "StartupStraight"
+    def evaluate_transition(self, data) -> AbstractState:
+        if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
+            return State_Finished(self.get_state_name())
+        elif(rospy.get_time() >=  self.__target_time_in_state + self.__state_entry_time):
+            return State_StartupTurnAndDrive()
+        else:
+            return self
+    
+class State_StartupTurnAndDrive(AbstractState):
+    def __init__(self):
+        super().__init__()
+        time.sleep(1)
+        self.__state_entry_time = rospy.get_time()
+        self.__target_time_in_state = 1.0
     def get_state_name(self) -> str:
         return "StartupTurnAndDrive"
     def evaluate_transition(self, data) -> AbstractState:
@@ -150,7 +164,7 @@ class State_PrePaveNavigateInside(AbstractState):
     def __init__(self):
         super().__init__()
         self.__state_entry_time = rospy.get_time()
-        self.__target_time_in_state = 1
+        self.__target_time_in_state = 0.6 # dropped from 1.0 to catch right edge better
     def get_state_name(self) -> str:
         return "PrePaveNavigateInside"
     def evaluate_transition(self, data) -> AbstractState:
@@ -333,7 +347,7 @@ class State_Error(AbstractState):
 ### State Machine ###
 class StateMachine:
     def __init__(self):
-        self.current_state = State_StartupTurnAndDrive()
+        self.current_state = State_StartupStraight()
         self.pub = rospy.Publisher('/competition_controller/state', String, queue_size=1)
         self.plate_stop_sub = rospy.Subscriber("/plate_reader/requested_driving_state", String, self.plate_stop_callback)
         self.stop_states_lookup = {"StopTurnLeft": State_StopTurnLeft, "StopTurnRight": State_StopTurnRight}

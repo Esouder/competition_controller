@@ -80,7 +80,7 @@ class Navigator():
         self.annotated_feed_pub.publish(self.bridge.cv2_to_imgmsg(frame_out, "bgr8"))
 
         error = width*NAVIGATION_SETPOINT - x_avg
-        self.move.linear.x = 0.4
+        self.move.linear.x = 0.35
         #derivative = prev_error-error
         #cv2.putText(frame_out, f"error:{error} | derivative: {derivative}", (100,200), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,0,0),2)
         if(x_avg<=1):
@@ -332,10 +332,15 @@ class Navigator():
         self.move.angular.z = 0.25
         self.move.linear.x = 0.2
     
-    def navigate_startup(self, frame) -> None:
+    def navigate_startup_straight(self, frame) -> None:
         '''Navigate during initial startup'''
-        self.move.angular.z = 0.5
+        self.move.angular.z = 0.1
         self.move.linear.x = 0.15
+    
+    def navigate_startup_turn(self, frame) -> None:
+        '''Navigate during initial startup'''
+        self.move.angular.z = 1.0
+        self.move.linear.x = 0.05
 
     def navigate_crosswalk_traverse(self, frame) ->None:
         '''Navigate during crosswalk traversal'''
@@ -360,8 +365,10 @@ class Navigator():
     def navigate(self, data):
         '''Run a navigation step based on a single frame'''
         frame = self.bridge.imgmsg_to_cv2(data, "bgr8")
-        if self.current_state == "StartupTurnAndDrive":
-            self.navigate_startup(frame)
+        if self.current_state == "StartupStraight":
+            self.navigate_startup_straight(frame)
+        elif self.current_state == "StartupTurnAndDrive":
+            self.navigate_startup_turn(frame)
         elif self.current_state == "PaveNavigate":
             self.navigate_pave(frame)
         elif self.current_state == "PaveNavigateLeft":

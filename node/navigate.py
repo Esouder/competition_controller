@@ -155,7 +155,8 @@ class Navigator():
         #derivative = prev_error-error
         #cv2.putText(frame_out, f"error:{error} | derivative: {derivative}", (100,200), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,0,0),2)
         if(x_avg<=1):
-            self.move.angular.z = 0.4
+            print("TURNING LEFT since no line detected")
+            self.move.angular.z = 0.4 # Turn left if no line is detected
         else:
             self.move.angular.z = error*kP #+ derivative*kD
         
@@ -324,7 +325,7 @@ class Navigator():
         else:
             self.move.angular.z = error*kP
 
-        self.move.linear.x = 0.2
+        self.move.linear.x = 0.25
 
         # cv2.imshow("DEBUG", frame_out)
 
@@ -355,12 +356,12 @@ class Navigator():
     def navigate_stop_turn_left(self, frame) -> None:
         '''Turn left'''
         self.move.angular.z = 0.1
-        self.move.linear.x = -0.01
+        self.move.linear.x = -0.005
     
     def navigate_stop_turn_right(self, frame) -> None:
         '''Turn right'''
         self.move.angular.z = -0.1
-        self.move.linear.x = -0.01
+        self.move.linear.x = -0.005
 
     def navigate(self, data):
         '''Run a navigation step based on a single frame'''

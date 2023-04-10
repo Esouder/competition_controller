@@ -21,7 +21,7 @@ class PedestrianDetector:
         greyscale_image=cv2.cvtColor(hsv_passed, cv2.COLOR_BGR2GRAY)
         height, width = greyscale_image.shape
         sum = 0
-        for y in range(height-20,height-1):
+        for y in range(height-100,height-1):
             for x in range(0,width-1):
                 if greyscale_image[y][x]:
                     sum += 1

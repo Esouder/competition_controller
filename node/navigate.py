@@ -91,7 +91,7 @@ class Navigator():
         prev_error = error
 
     def navigate_pave_left(self, frame) -> None:
-        '''Navigation algorithm based on pavement'''
+        '''Navigation algorithm based on pavement. . In use after offroad section'''
         frame_out = frame.copy()
         kP = 0.01
         kD = 0.001
@@ -141,7 +141,9 @@ class Navigator():
                       sum_x += x
                       pixel_count+=1
             x_avg = int(sum_x / pixel_count)
+            # print(f"x_avg: {x_avg}")
         except TypeError:
+            print("TypeError at navigate_pave_left")
             x_avg = 0
 
         # Place a line at the average x position on the image
@@ -173,15 +175,16 @@ class Navigator():
         frame_blues[:, :, 2] = 0
         frame_grey = cv2.cvtColor(frame_blues, cv2.COLOR_BGR2GRAY)
         _, frame_threshold = cv2.threshold(frame_grey, 0, 255, cv2.THRESH_BINARY_INV)
-
+        # cv2.imshow("raw threshold", frame_threshold)
+        # cv2.waitKey(3)
         kernel = np.ones((9,9),np.uint8)
         frame_threshold = cv2.dilate(frame_threshold,kernel,iterations = 3)
 
         frame_sobel = cv2.Sobel(frame_threshold, cv2.CV_64F, 1, 1, ksize=3)
         frame_corrected = frame_sobel.astype(np.uint8)
         frame_cropped = frame_corrected[400:-1, 640:-1]
-        #cv2.imshow("the marge of lake labarge", frame_cropped)
-        #cv2.waitKey(3)
+        # cv2.imshow("the marge of lake labarge", frame_cropped)
+        # cv2.waitKey(3)
         lines = cv2.HoughLinesP(frame_cropped, 1, np.pi/180, 50, minLineLength=75, maxLineGap=250)
         height = frame.shape[0]
         width = frame.shape[1]
@@ -207,7 +210,9 @@ class Navigator():
                       sum_x += x
                       pixel_count+=1
             x_avg = int(sum_x / pixel_count)
-        except TypeError:
+        except TypeError as e:
+            print("TypeError at navigate_pave_inside")
+            print(e)
             x_avg = 0
 
         # Place a line at the average x position on the image
@@ -305,7 +310,7 @@ class Navigator():
                 for x1, y1, x2, y2 in line:
                     cv2.line(frame_out, (x1+640, y1+400), (x2+640, y2+400), (0, 0, 255), 2)
         except TypeError:
-            print("bad")
+            print("No Grass Lines Found")
         cv2.line(frame_out, (x_avg, frame_out.shape[0]-200), (x_avg, frame_out.shape[0]-100), (0, 255, 0), thickness=10)
         # cv2.imshow("XAVG", frame_out)
         # cv2.waitKey(3)
@@ -331,7 +336,7 @@ class Navigator():
 
     def navigate_pre_pave_inside(self, frame):
         self.move.angular.z = 0.25
-        self.move.linear.x = 0.2
+        self.move.linear.x = 0.15
     
     def navigate_startup_straight(self, frame) -> None:
         '''Navigate during initial startup'''

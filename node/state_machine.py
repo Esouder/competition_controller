@@ -16,6 +16,9 @@ from surface_detector import SurfaceDetector
 from pedestrian_detector import PedestrianDetector
 from junction_detector import JunctionDetector
 
+TEAM_ID = "Team4'"
+TEAM_PW = "OvenPanicTruths"
+
 # eww globals
 
 surface_detector = None
@@ -54,7 +57,7 @@ class State_StartupStraight(AbstractState):
         start_publisher = rospy.Publisher("/license_plate", String, queue_size=1)
         time.sleep(1)
         competition_start_time = rospy.get_time()
-        competition_begin_message = str("Team4,multi21,0,AA00")
+        competition_begin_message = str(f"{TEAM_ID},{TEAM_PW},0,AA00")
         start_publisher.publish(competition_begin_message)
         print("Began Timer")
     def get_state_name(self) -> str:

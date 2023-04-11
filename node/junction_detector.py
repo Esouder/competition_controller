@@ -34,7 +34,7 @@ class JunctionDetector:
                 if x > last_pavement:
                     last_pavement = x
                 pavement_width+=1
-        print(pavement_width)
+        # print(f"pavement_width: {pavement_width}")
         cv2.line(frame_out, (first_pavement, height-detection_offset), (last_pavement, height-detection_offset), (255, 255, 0), 2)
         cv2.putText(frame_out, f"Width: {pavement_width}", (first_pavement, height - detection_offset), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,255,0),2)
 

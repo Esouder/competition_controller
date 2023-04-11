@@ -164,7 +164,7 @@ class State_PrePaveNavigateInside(AbstractState):
     def __init__(self):
         super().__init__()
         self.__state_entry_time = rospy.get_time()
-        self.__target_time_in_state = 0.6 # dropped from 1.0 to catch right edge better
+        self.__target_time_in_state = 1.0 
     def get_state_name(self) -> str:
         return "PrePaveNavigateInside"
     def evaluate_transition(self, data) -> AbstractState:
@@ -193,7 +193,7 @@ class State_JunctionWait(AbstractState):
         return "JunctionWait"
     def evaluate_transition(self, data) -> AbstractState:
         pos_x, pos_y = junction_detector.detect_truck(data)
-        print(f"x: {pos_x}, y: {pos_y}")
+        # print(f"Truck postion: x: {pos_x}, y: {pos_y}")
         if(rospy.get_time() > competition_start_time + MAX_COMPETITION_TIME):
             return State_Finished()
         elif 0 < pos_x < 400 and 0< pos_y < 700:
@@ -320,7 +320,7 @@ class State_StopSend(AbstractState):
 class State_Finished(AbstractState):
     def __init__(self, called_by = "Unknown"):
         super().__init__()
-        print("Called by: " + called_by)
+        print("Finished State Called by: " + called_by)
         self.stateEntryAction()
     def stateEntryAction(self):
         start_publisher = rospy.Publisher("/license_plate", String, queue_size=1)
@@ -379,6 +379,9 @@ class StateMachine:
             if self.current_state.get_state_name() in ["StopTurnRight", "StopTurnLeft"]:
                 self.current_state = self.prev_state_before_stop
                 self.pub.publish(self.current_state.get_state_name())
+        elif(data.data == "Finished"):
+            # Sent if we have read all the plates
+            self.current_state = State_Finished("Plate Reader")
         else:
             print("Error: Invalid driving state requested")
     
@@ -389,7 +392,7 @@ class StateMachine:
 
 def state_machine_node(initiator_msg):
     global surface_detector
-    print(rospy.get_time())
+    print(f"Initialized at time: {rospy.get_time()}")
     surface_detector = SurfaceDetector()
     state_machine = StateMachine()
     sub = rospy.Subscriber("/R1/pi_camera/image_raw", Image, state_machine.update_state)

@@ -356,7 +356,7 @@ class Navigator():
         else:
             self.move.angular.z = error*kP
 
-    def navigate_pre_grass(self, frame) -> None:
+    def navigate_pre_grass(self) -> None:
         ''' 
             Navigate Pre Grass
 
@@ -476,7 +476,7 @@ class Navigator():
         # Constant linear rate
         self.move.linear.x = 0.25
 
-    def navigate_pre_pave_inside(self, frame):
+    def navigate_pre_pave_inside(self):
         ''' 
             Navigate Pre Pave Inside
 
@@ -486,7 +486,7 @@ class Navigator():
         self.move.angular.z = 0.25
         self.move.linear.x = 0.15
     
-    def navigate_startup_straight(self, frame) -> None:
+    def navigate_startup_straight(self) -> None:
         '''
             Navigate Startup Straight
         
@@ -496,7 +496,7 @@ class Navigator():
         self.move.angular.z = 0.1
         self.move.linear.x = 0.15
     
-    def navigate_startup_turn(self, frame) -> None:
+    def navigate_startup_turn(self) -> None:
         '''
             Navigate Startup Turn
         
@@ -506,7 +506,7 @@ class Navigator():
         self.move.angular.z = 1.0
         self.move.linear.x = 0.05
 
-    def navigate_crosswalk_traverse(self, frame) ->None:
+    def navigate_crosswalk_traverse(self) ->None:
         '''
             Navigate Crosswalk Traverse
 
@@ -515,7 +515,7 @@ class Navigator():
         self.move.angular.z = 0
         self.move.linear.x = 0.5
     
-    def navigate_stopped(self, frame) -> None:
+    def navigate_stopped(self) -> None:
         '''
             Navigate Stopped
             Navigate, but, like, don't
@@ -523,12 +523,12 @@ class Navigator():
         self.move.angular.z = 0
         self.move.linear.x = 0
 
-    def navigate_stop_turn_left(self, frame) -> None:
+    def navigate_stop_turn_left(self) -> None:
         '''Turn left'''
         self.move.angular.z = 0.1
         self.move.linear.x = -0.005
     
-    def navigate_stop_turn_right(self, frame) -> None:
+    def navigate_stop_turn_right(self) -> None:
         '''Turn right'''
         self.move.angular.z = -0.1
         self.move.linear.x = -0.005
@@ -545,33 +545,33 @@ class Navigator():
 
         # Select and run a navigation algorithm based on the current state
         if self.current_state == "StartupStraight":
-            self.navigate_startup_straight(frame)
+            self.navigate_startup_straight()
         elif self.current_state == "StartupTurnAndDrive":
-            self.navigate_startup_turn(frame)
+            self.navigate_startup_turn()
         elif self.current_state == "PaveNavigate":
             self.navigate_pave(frame)
         elif self.current_state == "PaveNavigateLeft":
             self.navigate_pave_left(frame)
         elif self.current_state == "PrePaveNavigateInside":
-            self.navigate_pre_pave_inside(frame)
+            self.navigate_pre_pave_inside()
         elif self.current_state == "PaveNavigateInside":
             self.navigate_pave_inside(frame)
         elif self.current_state == "JunctionWait":
-            self.navigate_stopped(frame)
+            self.navigate_stopped()
         elif self.current_state == "PreGrassNavigate":
-            self.navigate_pre_grass(frame)
+            self.navigate_pre_grass()
         elif self.current_state == "GrassNavigate":
             self.navigate_grass(frame)
         elif self.current_state == "StopTurnLeft":
-            self.navigate_stop_turn_left(frame)
+            self.navigate_stop_turn_left()
         elif self.current_state == "StopTurnRight":
-            self.navigate_stop_turn_right(frame)
+            self.navigate_stop_turn_right()
         elif self.current_state == "CrosswalkWait":
-            self.navigate_stopped(frame)
+            self.navigate_stopped()
         elif self.current_state == "CrosswalkTraverse":
-            self.navigate_crosswalk_traverse(frame)
+            self.navigate_crosswalk_traverse()
         elif self.current_state == "Finished":
-            self.navigate_stopped(frame)
+            self.navigate_stopped()
         else:
             pass
         

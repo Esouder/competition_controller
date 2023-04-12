@@ -9,11 +9,22 @@ import numpy as np
 
 
 class SurfaceDetector:
+    '''
+        Surface Detector
+
+        Detects if the current surface is pavement or grass
+    '''
+
     class RoadSurface(Enum):
         PAVEMENT = 0
         GRASS = 1
     
     def __init__(self):
+        '''
+            Init the Surface Detector. NOTE: must be called by an INITIALIZED 
+            ros node
+        '''
+
         model_location = rospy.get_param('~model_location')
         self.model = models.load_model(model_location, compile=False)
         LEARNING_RATE = 1e-4
@@ -21,18 +32,19 @@ class SurfaceDetector:
         self.bridge = CvBridge()
         self.current_surface = self.RoadSurface.PAVEMENT # always start on pavement
 
-    def poll(self, data, debug=False):
+    def poll(self, data):
+        ''' 
+            Run the surface detector on a given frame
+        '''
+        # Convert to a cv2 friendly format
         frame = self.bridge.imgmsg_to_cv2(data, "bgr8")
-        if debug:
-            frame_out = frame
 
+        # Resize and crop the frame
         small_frame = cv2.resize(frame, (int(frame.shape[1]*0.025),int(frame.shape[0]*0.05)))
         cropped_small_frame = small_frame[18:-1]
+
+        # Determine the probability of grass and output the most likely surface
         grass_prob = self.model(np.array([cropped_small_frame]))[0][0]
         current_surface = self.RoadSurface.GRASS if grass_prob > 0.5 else self.RoadSurface.PAVEMENT
 
-        if debug:
-            cv2.putText(frame_out, f"it's {'GRASS' if current_surface == self.RoadSurface.GRASS else 'PAVEMENT'} ({grass_prob*100 if grass_prob > 0.5 else (1-grass_prob)*100}%)", (100,100), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,0,0),2)
-            return current_surface, frame_out
-        else:
-            return current_surface
+        return current_surface

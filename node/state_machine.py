@@ -16,7 +16,7 @@ from surface_detector import SurfaceDetector
 from pedestrian_detector import PedestrianDetector
 from junction_detector import JunctionDetector
 
-TEAM_ID = "Team4'"
+TEAM_ID = '"Team4"'
 TEAM_PW = "OvenPanicTruths"
 
 # eww globals

@@ -226,7 +226,7 @@ class Navigator():
         #derivative = prev_error-error
         #cv2.putText(frame_out, f"error:{error} | derivative: {derivative}", (100,200), cv2.FONT_HERSHEY_SIMPLEX, 1,(255,0,0),2)
         if(x_avg<=1):
-            self.move.angular.z = 0
+            self.move.angular.z = -0.2 #turn a bit right if no line is detected
         else:
             self.move.angular.z = error*kP #+ derivative*kD
         

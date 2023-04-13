@@ -328,7 +328,7 @@ class State_Finished(AbstractState):
     def stateEntryAction(self):
         start_publisher = rospy.Publisher("/license_plate", String, queue_size=1)
         time.sleep(1)
-        competition_end_message = str("Team4,multi21,-1,AA00")
+        competition_end_message = str('"Team4",multi21,-1,AA00')
         start_publisher.publish(competition_end_message)
         print("Ended Timer")
     def get_state_name(self) -> str:
